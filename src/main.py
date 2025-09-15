@@ -3,16 +3,18 @@
 import argparse
 from crawlers.guardian_crawler import GuardianCrawler
 from config import GUARDIAN_API_KEY
+from parsers.parser import normalize_news_list
 
 def run_all(keyword=None, from_date=None, to_date=None):
-    all_news = []
-
     guardian = GuardianCrawler(api_key=GUARDIAN_API_KEY)
-    all_news.extend(guardian.fetch_news(keyword=keyword, from_date=from_date, to_date=to_date))
+    raw_news = guardian.fetch_news(keyword=keyword, from_date=from_date, to_date=to_date)
+
+    # Normalize news using parser
+    news = normalize_news_list(raw_news, source="Guardian")
     
-    print(f"Fetched {len(all_news)} articles")
-    for news in all_news:
-        print(f"{news['date']} | {news['title']}")
+    print(f"Fetched {len(news)} articles after normalization")
+    print(news)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Guardian news crawler for a keyword and date range.")
