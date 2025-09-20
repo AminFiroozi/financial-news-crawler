@@ -42,8 +42,7 @@ class NYTimesCrawler(Crawler):
                             "title": article.get("headline", {}).get("main"),
                             "url": article.get("web_url"),
                             "source": "NYTimes",
-                            "date": str(article.get("pub_date")),
-                            "content": article.get("abstract")
+                            "date": str(article.get("pub_date"))
                         })
 
             year += 1
