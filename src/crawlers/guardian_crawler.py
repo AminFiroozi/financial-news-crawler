@@ -3,6 +3,7 @@
 from .base import Crawler
 from datetime import datetime, timedelta
 from tqdm import tqdm
+from time import sleep
 
 class GuardianCrawler(Crawler):
 
@@ -42,15 +43,29 @@ class GuardianCrawler(Crawler):
             if keyword:
                 params["q"] = keyword
 
-            # First request to get total pages
-            data = self.get_json(self.BASE_URL, params=params)
-            response = data.get("response", {})
-            total_pages = response.get("pages", 1)
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    # First request to get total pages
+                    data = self.get_json(self.BASE_URL, params=params)
+                    response = data.get("response", {})
+                    total_pages = response.get("pages", 1)
+                    break  # success, exit retry loop
+                except Exception as e:
+                    print(f"Error fetching {day_str}, attempt {attempt+1}: {e}")
+                    sleep(2)  # wait before retry
+            else:
+                print(f"Skipping {day_str} after {max_retries} failed attempts.")
+                continue  # skip to next day
 
             for page in range(1, total_pages + 1):
                 params["page"] = page
-                data = self.get_json(self.BASE_URL, params=params)
-                results = data.get("response", {}).get("results", [])
+                try:
+                    data = self.get_json(self.BASE_URL, params=params)
+                    results = data.get("response", {}).get("results", [])
+                except Exception as e:
+                    print(f"Error fetching page {page} for {day_str}: {e}")
+                    continue  # skip this page
 
                 for item in results:
                     all_news.append({
