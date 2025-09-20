@@ -29,7 +29,8 @@ pip install -r requirements.txt
 3. (Optional) Create a `.env` file for API keys:
 
 ```env
-API_KEY=your_api_key_here
+GUARDIAN_API_KEY="YOUR GUARDIAN_API_KEY HERE"
+NYTIMES_API_KEY="YOUR NYTIMES_API_KEY HERE"
 ```
 
 ## Usage
@@ -43,7 +44,7 @@ python src/crawler.py
 Example with custom parameters:
 
 ```bash
-python src/crawler.py --source "exampleAPI" --keyword "Tesla" --from_date "2025-01-01" --to_date "2025-09-01"
+python src/crawler.py --from_date "2024-01-01" --to_date "2024-01-10" --file "news.csv"
 ```
 
 ## Project Structure
@@ -51,28 +52,26 @@ python src/crawler.py --source "exampleAPI" --keyword "Tesla" --from_date "2025-
 ```
 financial-news-crawler/
 │
-├── src/                    # Source code
-│   ├── crawler.py          # Core crawling logic
-│   ├── parser.py           # Parse news data
-│   ├── storage.py          # Save news to DB/JSON/CSV
-│   ├── config.py           # API keys, endpoints, parameters
-│   └── utils.py            # Helper functions
+├── src/                           # Source code
+│   ├── crawlers                   # Core crawling logic
+│   │   ├── guardian_crawler.py 
+│   │   └── nytimes_crawler.py  
+│   ├── parsers                    # Parse news data
+│   │   └── parser.py
+│   ├── storage                    # Save news to DB/JSON/CSV
+│   │   ├── storage.py 
+│   │   ├── aggregate.py 
+│   │   └── plot_news.py  
+│   ├── config.py                  # API keys, endpoints, parameters
+│   ├── utils.py                   # Helper functions
+│   └── main.py                    # Entry point
 │
-├── tests/                  # Unit tests
-│   └── test_crawler.py
+├── plots/                         # Exported result of crawled news
+│   ├── overall_weekly.png
+│   └── Guardian_daily.png
 │
-├── data/                   # Sample data (optional)
-│   └── sample_news.json
-│
-├── notebooks/              # Optional analysis
-│   └── analysis.ipynb
-│
-├── docs/                   # Optional documentation
-│   └── architecture.md
-│
-├── requirements.txt        # Python dependencies
+├── requirements.txt               # Python dependencies
 ├── README.md
-├── LICENSE
 └── .gitignore
 ```
 
