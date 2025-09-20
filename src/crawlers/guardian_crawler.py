@@ -12,7 +12,8 @@ class GuardianCrawler(Crawler):
         """
         params = {
             "api-key": self.api_key,
-            "format": "json"
+            "format": "json",
+            "page-size": 200
         }
         if keyword:
             params["q"] = keyword
