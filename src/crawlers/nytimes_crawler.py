@@ -1,6 +1,6 @@
 from .base import Crawler
 from pynytimes import NYTAPI
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from tqdm import tqdm
 
 class NYTimesCrawler(Crawler):
@@ -33,16 +33,18 @@ class NYTimesCrawler(Crawler):
                 for article in archive_data:
                     pub_date = article.get("pub_date")
                     if isinstance(pub_date, datetime):
-                        pub_date = pub_date.date()
+                        pub_date_utc = pub_date.astimezone(timezone.utc)
                     else:
-                        pub_date = datetime.fromisoformat(str(pub_date)[:10]).date()
+                        pub_date_utc = datetime.fromisoformat(str(pub_date)[:19]).astimezone(timezone.utc)
 
-                    if from_date <= pub_date <= to_date:
+                    pub_date_str = pub_date_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+                    if from_date <= pub_date_utc.date() <= to_date:
                         news_items.append({
                             "title": article.get("headline", {}).get("main"),
                             "url": article.get("web_url"),
                             "source": "NYTimes",
-                            "date": str(article.get("pub_date"))
+                            "date": pub_date_str
                         })
 
             year += 1

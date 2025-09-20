@@ -6,6 +6,8 @@ from crawlers.nytimes_crawler import NYTimesCrawler
 from config import GUARDIAN_API_KEY, NYTIMES_API_KEY
 from parsers.parser import normalize_news_list
 from storage.storage import save_news
+from storage.aggregate import aggregate_news
+from storage.plot_news import plot_news_counts
 
 
 def run_all(keyword=None, from_date=None, to_date=None, file_path="all_news.csv"):
@@ -30,6 +32,11 @@ def run_all(keyword=None, from_date=None, to_date=None, file_path="all_news.csv"
     print(f"Fetched and saved {len(all_news)} total articles to {file_path}")
     for item in all_news[:10]:  # print first 10 only
         print(f"[{item['source']}] {item['date']} | {item['title']}")
+        
+    aggregated = aggregate_news(all_news)
+    # Save plots
+    plot_news_counts(aggregated, output_dir="plots")
+
 
 
 if __name__ == "__main__":
