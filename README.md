@@ -38,13 +38,13 @@ NYTIMES_API_KEY="YOUR NYTIMES_API_KEY HERE"
 Run the crawler:
 
 ```bash
-python src/crawler.py
+python src/main.py
 ```
 
 Example with custom parameters:
 
 ```bash
-python src/crawler.py --from_date "2024-01-01" --to_date "2024-01-10" --file "news.csv"
+python src/main.py --from_date "2024-01-01" --to_date "2024-01-10" --file "news.csv"
 ```
 
 ## Project Structure
