@@ -12,18 +12,19 @@ from storage.plot_news import plot_news_counts
 
 def run_all(keyword=None, from_date=None, to_date=None, file_path="all_news.csv"):
     all_news = []
+    
+    # --- NY Times ---
+    nyt = NYTimesCrawler(api_key=NYTIMES_API_KEY)
+    raw_nyt = nyt.fetch_news(from_date=from_date, to_date=to_date)
+    nyt_news = normalize_news_list(raw_nyt, source="NYTimes")
+    all_news.extend(nyt_news)
 
     # --- Guardian ---
     guardian = GuardianCrawler(api_key=GUARDIAN_API_KEY)
     raw_guardian = guardian.fetch_news(keyword=keyword, from_date=from_date, to_date=to_date)
     guardian_news = normalize_news_list(raw_guardian, source="Guardian")
     all_news.extend(guardian_news)
-
-    # --- NY Times ---
-    nyt = NYTimesCrawler(api_key=NYTIMES_API_KEY)
-    raw_nyt = nyt.fetch_news(from_date=from_date, to_date=to_date)
-    nyt_news = normalize_news_list(raw_nyt, source="NYTimes")
-    all_news.extend(nyt_news)
+    
 
     # --- Save merged results ---
     save_news(all_news, file_path=file_path)

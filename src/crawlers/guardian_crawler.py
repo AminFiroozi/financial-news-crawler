@@ -4,12 +4,35 @@ from .base import Crawler
 from datetime import datetime, timedelta
 from tqdm import tqdm
 from time import sleep
+import json
+import os
 
 class GuardianCrawler(Crawler):
 
     BASE_URL = "https://content.guardianapis.com/search"
+    
+    # New helper method to save individual items
+    def _save_item_to_json(self, item):
+        """Saves a single raw Guardian API item dictionary to a JSON file."""
+        temp_dir = "temp"
+        # Ensure the temp directory exists
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-    def fetch_news(self, keyword=None, from_date=None, to_date=None):
+        # Use the article ID (a unique identifier) to create a unique filename
+        item_id = item.get("id", f"no-id-{datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+        # Clean up the ID to be a valid filename
+        filename = os.path.join(temp_dir, f"{item_id.replace('/', '_')}.json")
+
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(item, f, ensure_ascii=False, indent=4)
+            # You can remove this print if you want less output, but it confirms the save
+            # print(f"Saved raw item to: {filename}") 
+        except Exception as e:
+            print(f"Error saving raw item {item_id} to file: {e}")
+
+    def fetch_news(self, keyword=None, sections=['business', 'politics', 'money', 'world news', 'technology'], from_date=None, to_date=None):
         """
         Fetch news from Guardian API day by day and return standardized format.
         """
@@ -68,12 +91,16 @@ class GuardianCrawler(Crawler):
                     continue  # skip this page
 
                 for item in results:
-                    all_news.append({
-                        "title": item.get("webTitle"),
-                        "url": item.get("webUrl"),
-                        "source": "Guardian",
-                        "date": item.get("webPublicationDate"),
-                        "content": None,
-                    })
+                    # self._save_item_to_json(item) 
+                    if (item.get("sectionName").lower() in sections):
+                        all_news.append({
+                            "title": item.get("webTitle"),
+                            "url": item.get("webUrl"),
+                            "source": "Guardian",
+                            "date": item.get("webPublicationDate"),
+                            "section": item.get("sectionName"),
+                            "content": None,
+                        })
+                        # print(all_news[-1])
 
         return all_news
