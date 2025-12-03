@@ -30,6 +30,28 @@ class NYTimesCrawler(Crawler):
                 json.dump(item, f, ensure_ascii=False, indent=4)
         except Exception as e:
             print(f"Error saving raw NYT item {item_id} to file: {e}")
+
+    # --- NEW HELPER METHOD FOR CATEGORY MAPPING ---
+    def _map_nytimes_section_to_category(self, section_name):
+        """
+        Maps the NYT's section name to a standard category name.
+        """
+        if not section_name:
+            return "General"
+        
+        section_name_lower = section_name.lower()
+        
+        # Define specific financial/economic categories
+        if section_name_lower in ['business', 'dealbook', 'your money', 'economy', 'financial']:
+            return "Finance & Business"
+        elif section_name_lower in ['politics', 'us', 'world']:
+            return "Politics & World"
+        elif section_name_lower in ['technology', 'tech', 'science']:
+            return "Technology"
+        elif section_name_lower in ['culture', 'arts', 'sports', 'style']:
+            return "General"
+        else:
+            return "General" # Default category
     
     def fetch_news(self, sections=['business', 'politics', 'your money', 'world', 'technology'], from_date=None, to_date=None):
         if from_date is None:
@@ -50,27 +72,51 @@ class NYTimesCrawler(Crawler):
             end_month = to_date.month if year == to_date.year else 12
 
             for month in tqdm(range(start_month, end_month + 1), desc=f"NYTimes {year}"):
-                archive_data = self.client.archive_metadata(date=date(year, month, 1))
+                
+                # Check date constraints for NYT Archive API
+                # The NYT Archive API only allows retrieving up to the current month.
+                current_date = date(year, month, 1)
+                if current_date.year > date.today().year or (current_date.year == date.today().year and current_date.month > date.today().month):
+                    # Skip fetching future months
+                    continue
+
+                archive_data = self.client.archive_metadata(date=current_date)
 
                 for article in archive_data:
                     # print(article)
-                    # break
-                    self._save_item_to_json(article)
+                    # self._save_item_to_json(article) # Uncomment this if you want to save the raw JSON
+                    
                     pub_date = article.get("pub_date")
                     if isinstance(pub_date, datetime):
                         pub_date_utc = pub_date.astimezone(timezone.utc)
                     else:
-                        pub_date_utc = datetime.fromisoformat(str(pub_date)[:19]).astimezone(timezone.utc)
+                        try:
+                            # Attempt to parse as ISO 8601 string, often truncated
+                            pub_date_utc = datetime.fromisoformat(str(pub_date)[:19]).astimezone(timezone.utc)
+                        except:
+                            # Fallback if date parsing fails
+                            continue 
 
                     pub_date_str = pub_date_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    section_name = article.get('section_name')
 
                     if from_date <= pub_date_utc.date() <= to_date:
-                        if any(section in article.get('section_name').lower() for section in sections):
+                        # Ensure we check the article's section_name, not just if the sections array has a match
+                        if section_name and any(section in section_name.lower() for section in sections):
+                            
+                            # --- MODIFICATION: ADDED CATEGORY COLUMN ---
+                            category = self._map_nytimes_section_to_category(section_name)
+                            
+                            # The 'lead_paragraph' field is often the closest thing to 'content' in the archive metadata
+                            content_snippet = article.get("lead_paragraph")
+                            
                             news_items.append({
                                 "title": article.get("headline", {}).get("main"),
                                 "url": article.get("web_url"),
                                 "source": "NYTimes",
-                                "date": pub_date_str
+                                "date": pub_date_str,
+                                "content": content_snippet, # Using lead_paragraph as content
+                                "category": category # New column added
                             })
 
             year += 1
