@@ -32,6 +32,28 @@ class GuardianCrawler(Crawler):
         except Exception as e:
             print(f"Error saving raw item {item_id} to file: {e}")
 
+    # --- NEW HELPER METHOD FOR CATEGORY MAPPING ---
+    def _map_guardian_section_to_category(self, section_name):
+        """
+        Maps the Guardian's section name to a standard category name.
+        """
+        if not section_name:
+            return "General"
+        
+        section_name_lower = section_name.lower()
+        
+        # Define specific financial/economic categories
+        if section_name_lower in ['business', 'money', 'economy', 'financial']:
+            return "Finance & Business"
+        elif section_name_lower in ['politics', 'government', 'world news']:
+            return "Politics & World"
+        elif section_name_lower in ['technology', 'tech']:
+            return "Technology"
+        elif section_name_lower in ['sport', 'culture', 'life and style']:
+            return "General"
+        else:
+            return "General" # Default category
+
     def fetch_news(self, keyword=None, sections=['business', 'politics', 'money', 'world news', 'technology'], from_date=None, to_date=None):
         """
         Fetch news from Guardian API day by day and return standardized format.
@@ -92,14 +114,19 @@ class GuardianCrawler(Crawler):
 
                 for item in results:
                     # self._save_item_to_json(item) 
-                    if (item.get("sectionName").lower() in sections):
+                    section_name = item.get("sectionName")
+                    
+                    if (section_name and section_name.lower() in sections):
+                        # --- MODIFICATION: ADDED CATEGORY COLUMN ---
+                        category = self._map_guardian_section_to_category(section_name)
+                        
                         all_news.append({
                             "title": item.get("webTitle"),
                             "url": item.get("webUrl"),
                             "source": "Guardian",
                             "date": item.get("webPublicationDate"),
-                            "section": item.get("sectionName"),
                             "content": None,
+                            "category": category # New column added
                         })
                         # print(all_news[-1])
 
